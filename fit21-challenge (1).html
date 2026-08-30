@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fit 21 線上馬拉松</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBxzH_uYYZtgQ_QuG30Olg_bLzag1WbLIM",
+    authDomain: "fit21-3741a.firebaseapp.com",
+    databaseURL: "https://fit21-3741a-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "fit21-3741a",
+    storageBucket: "fit21-3741a.firebasestorage.app",
+    messagingSenderId: "177610672979",
+    appId: "1:177610672979:web:c4a89766f29ad2f878efa6"
+  };
+  let fbDB=null;
+  try{ firebase.initializeApp(firebaseConfig); fbDB=firebase.database(); }catch(e){ console.warn('Firebase init failed',e); }
+</script>
+<style>
+  :root{
+    --bg:#FBF4F0;--paper:#FFFAF7;--ink:#4A423E;--soft:#9B8E88;--line:#F0E3DC;
+    --leaf:#8FB98A;--leaf-deep:#6E9E6A;--clay:#E3A183;--sun:#F2CE86;--water:#9FCBDD;--rose:#E8A8B6;
+    --shadow:0 2px 8px rgba(120,90,80,.05),0 12px 30px rgba(120,90,80,.05);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;background:var(--bg);color:var(--ink);line-height:1.65;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:520px;margin:0 auto;padding:0 18px 60px;position:relative}
+  header{padding:32px 0 18px;text-align:center}
+  .sun{width:64px;height:64px;border-radius:50%;margin:0 auto 14px;background:radial-gradient(circle at 50% 45%,#FCEAC2,var(--sun) 60%,#EDBE6E);box-shadow:0 0 0 8px rgba(242,206,134,.16),0 0 34px rgba(242,206,134,.4);animation:rise 1.2s ease-out}
+  @keyframes rise{from{transform:translateY(14px);opacity:0}to{transform:translateY(0);opacity:1}}
+  h1{font-size:26px;letter-spacing:1px;font-weight:800;margin-bottom:4px}
+  .tag{color:var(--soft);font-size:14px}
+  .daycount{display:inline-block;margin-top:14px;padding:5px 16px;border-radius:999px;background:var(--leaf);color:#fff;font-size:13px;font-weight:600;letter-spacing:.5px}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:22px;margin-top:16px;box-shadow:var(--shadow)}
+  .card h2{font-size:17px;margin-bottom:4px}
+  .card .hint{color:var(--soft);font-size:13px;margin-bottom:14px}
+  label{display:block;font-size:13px;color:var(--soft);margin:12px 0 6px;font-weight:600}
+  input,select{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:12px;font-size:16px;background:#fff;color:var(--ink);font-family:inherit}
+  input:focus,select:focus{outline:2px solid var(--leaf);border-color:transparent}
+  .row{display:flex;gap:10px}.row>div{flex:1}
+  .btn{width:100%;padding:14px;border:none;border-radius:14px;background:var(--leaf);color:#fff;font-size:16px;font-weight:700;cursor:pointer;margin-top:18px;font-family:inherit;transition:transform .12s,background .2s}
+  .btn:hover{background:var(--leaf-deep)}.btn:active{transform:scale(.98)}
+  .privacy{display:flex;gap:8px;align-items:flex-start;margin-top:16px;font-size:12px;color:var(--soft);background:#F6ECE6;padding:11px 13px;border-radius:12px;line-height:1.5}
+  .privacy svg{flex-shrink:0;margin-top:2px}
+  .tabs{display:flex;gap:6px;margin-top:18px;background:#F3E7E0;padding:5px;border-radius:14px}
+  .tabs button{flex:1;padding:9px;border:none;background:transparent;border-radius:10px;font-size:13px;font-weight:600;color:var(--soft);cursor:pointer;font-family:inherit}
+  .tabs button.active{background:#fff;color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.05)}
+  .view{display:none;animation:fade .35s ease}.view.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .greet{margin:18px 2px 4px;font-size:18px;font-weight:700}.greet span{color:var(--leaf-deep)}
+  .subtle{color:var(--soft);font-size:13px;margin:0 2px 8px}
+  .checkitem{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:16px 18px;margin-top:12px;box-shadow:var(--shadow)}
+  .checkitem .top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex-shrink:0;font-size:16px}
+  .ic.w{background:rgba(159,203,221,.22)}.ic.s{background:rgba(242,206,134,.25)}.ic.h{background:rgba(232,168,182,.22)}
+  .checkitem .title{font-size:15px;font-weight:700}
+  .checkitem .desc{font-size:12px;color:var(--soft)}
+  .watertotal{text-align:center;font-size:14px;color:var(--water);font-weight:700;margin:2px 0 12px}
+  .watertotal b{font-size:20px;color:#5f9bb5}
+  .cupgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+  .cupwrap{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+  .cup{width:100%;aspect-ratio:.82;border-radius:5px 5px 9px 9px;border:2px solid var(--water);background:transparent;position:relative;overflow:hidden;transition:.2s}
+  .cup.full{background:var(--water)}
+  .cup.full::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent,rgba(255,255,255,.3))}
+  .cuplabel{font-size:9px;color:var(--soft);font-weight:600}
+  .cupwrap.full .cuplabel{color:#5f9bb5}
+  .honestrow{display:flex;gap:10px;margin-top:4px}
+  .honestrow button{flex:1;padding:13px;border:2px solid var(--line);border-radius:14px;background:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--ink);transition:.15s}
+  .honestrow button.yes.sel{border-color:var(--leaf);background:rgba(143,185,138,.16);color:var(--leaf-deep)}
+  .honestrow button.no.sel{border-color:var(--clay);background:rgba(227,161,131,.16);color:#c07a55}
+  .save-note{text-align:center;font-size:12px;color:var(--soft);margin-top:14px}
+  /* counter stepper */
+  .counter{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:4px}
+  .counter button{width:40px;height:40px;border-radius:50%;border:2px solid var(--line);background:#fff;font-size:20px;font-weight:700;color:var(--leaf-deep);cursor:pointer;font-family:inherit;line-height:1}
+  .counter button:active{transform:scale(.92)}
+  .counter .cnum{font-size:26px;font-weight:800;min-width:36px;text-align:center;color:var(--ink)}
+  .counter .cunit{font-size:13px;color:var(--soft)}
+  .goaltick{text-align:center;font-size:12px;font-weight:600;margin-top:8px;min-height:16px}
+  .tabletsrow{display:flex;gap:8px;margin-top:6px}
+  .tabletsrow button{flex:1;padding:12px 4px;border:2px solid var(--line);border-radius:12px;background:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--soft);transition:.15s}
+  .tabletsrow button.sel{border-color:var(--leaf);background:rgba(143,185,138,.14);color:var(--leaf-deep)}
+  .orderrow{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+  .orderrow button{padding:13px;border:2px solid var(--line);border-radius:14px;background:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--ink);transition:.15s;text-align:left}
+  .orderrow button.sel{border-color:var(--leaf);background:rgba(143,185,138,.14);color:var(--leaf-deep)}
+  .orderrow button .ok{float:right;color:var(--leaf-deep)}
+  .done-badge{text-align:center;padding:22px;margin-top:14px;background:rgba(143,185,138,.1);border:1px dashed var(--leaf);border-radius:18px}
+  .done-badge .big{font-size:30px}
+  .done-badge p{margin-top:6px;font-size:14px;color:var(--leaf-deep);font-weight:600}
+  .statgrid{display:flex;gap:10px;margin-top:16px}
+  .stat{flex:1;background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:14px 10px;text-align:center;box-shadow:var(--shadow)}
+  .stat .n{font-size:24px;font-weight:800;color:var(--leaf-deep)}
+  .stat .l{font-size:11px;color:var(--soft);margin-top:2px}
+  .chartcard{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:18px;margin-top:14px;box-shadow:var(--shadow)}
+  .chartcard h3{font-size:14px;margin-bottom:12px;color:var(--soft)}
+  svg.chart{width:100%;height:150px;display:block}
+  .empty{text-align:center;color:var(--soft);font-size:13px;padding:26px 10px}
+
+  /* ---- communal board ---- */
+  .quote{text-align:center;font-size:15px;font-weight:600;color:var(--leaf-deep);background:rgba(143,185,138,.1);border-radius:16px;padding:16px;margin-top:16px;line-height:1.6}
+  .together{background:linear-gradient(180deg,#FFFBF5,#F4F5EE);border:1px solid var(--line);border-radius:22px;padding:22px 20px;margin-top:14px;box-shadow:var(--shadow);text-align:center;position:relative;overflow:hidden}
+  .together h3{font-size:15px;color:var(--leaf-deep);margin-bottom:2px}
+  .together .sub{font-size:12px;color:var(--soft);margin-bottom:16px}
+  .scene{height:120px;position:relative;margin:0 -20px 8px}
+  .bigtotal{font-size:34px;font-weight:800;color:var(--leaf-deep);line-height:1}
+  .bigtotal small{font-size:13px;color:var(--soft);font-weight:600}
+  .teamrow{display:flex;gap:10px;margin-top:16px}
+  .teamstat{flex:1;background:rgba(255,255,255,.7);border-radius:14px;padding:10px 6px}
+  .teamstat .tn{font-size:18px;font-weight:800;color:var(--water)}
+  .teamstat .tn.leafc{color:var(--leaf-deep)}
+  .teamstat .tl{font-size:10px;color:var(--soft);margin-top:1px}
+  .progwrap{margin-top:16px}
+  .progbar{height:14px;background:#EAE0D6;border-radius:999px;overflow:hidden}
+  .progfill{height:100%;background:linear-gradient(90deg,var(--leaf),var(--sun));border-radius:999px;transition:width .8s ease}
+  .proglabel{font-size:11px;color:var(--soft);margin-top:6px}
+
+  .sectitle{font-size:13px;font-weight:700;color:var(--soft);margin:22px 4px 2px;letter-spacing:.5px}
+  .wall{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .chip{display:flex;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:6px 12px 6px 8px;font-size:13px;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+  .chip .dot{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:10px;font-weight:700}
+  .chip.me{border-color:var(--leaf);background:rgba(143,185,138,.1)}
+  .cheerbtn{margin-left:2px;border:none;background:transparent;cursor:pointer;font-size:14px;padding:0 2px;opacity:.75;transition:.15s}
+  .cheerbtn:hover{opacity:1;transform:scale(1.2)}
+  .cheerbtn.done{opacity:1}
+
+  .myinbox{background:rgba(242,206,134,.14);border:1px solid rgba(242,206,134,.5);border-radius:16px;padding:16px;margin-top:14px;text-align:center}
+  .myinbox .n{font-size:26px;font-weight:800;color:#c99a2e}
+  .myinbox p{font-size:13px;color:#9a7522;margin-top:2px}
+  .myinbox .lines{margin-top:10px;font-size:13px;color:var(--ink)}
+  .myinbox .lines div{background:#fff;border-radius:10px;padding:7px 12px;margin-top:6px;display:inline-block}
+
+  .softrank{margin-top:10px}
+  .lbrow{display:flex;align-items:center;gap:12px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:10px 14px;margin-top:8px;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+  .lbrow.me{border-color:var(--leaf);background:rgba(143,185,138,.08)}
+  .ava{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px}
+  .lbname{flex:1;font-weight:600;font-size:14px}
+  .lbpts{font-weight:700;color:var(--leaf-deep);font-size:14px}
+  .lbpts small{font-weight:400;color:var(--soft);font-size:11px}
+  .toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(20px);background:var(--leaf-deep);color:#fff;padding:12px 22px;border-radius:999px;font-size:14px;font-weight:600;box-shadow:0 8px 24px rgba(110,158,106,.4);opacity:0;transition:.35s;z-index:50;pointer-events:none}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  footer{text-align:center;color:var(--soft);font-size:11px;margin-top:36px;line-height:1.6}
+  /* scoring guide */
+  .ruleintro{text-align:center;font-size:14px;color:var(--soft);margin:18px 6px 4px;line-height:1.6}
+  .maxpill{display:block;text-align:center;margin:14px auto 4px;background:linear-gradient(90deg,var(--leaf),var(--sun));color:#fff;font-weight:800;font-size:15px;padding:10px;border-radius:14px;letter-spacing:.5px}
+  .rulecard{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin-top:11px;box-shadow:var(--shadow);display:flex;gap:12px;align-items:flex-start}
+  .rulecard .ri{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-size:18px;flex-shrink:0}
+  .rulecard .rc-body{flex:1}
+  .rulecard .rc-t{font-weight:700;font-size:15px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .rulecard .rc-pts{color:var(--leaf-deep);font-weight:800;font-size:14px;white-space:nowrap}
+  .rulecard .rc-d{font-size:12px;color:var(--soft);margin-top:3px;line-height:1.5}
+  .rulenote{background:rgba(242,206,134,.16);border:1px solid rgba(242,206,134,.5);border-radius:16px;padding:14px 16px;margin-top:16px;font-size:13px;color:#8a6320;line-height:1.6}
+  .rulenote b{color:#6b4d18}
+  /* score detail */
+  .dayblock{border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-top:10px;background:#fff}
+  .dayblock .dh{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:14px;margin-bottom:8px}
+  .dayblock .dh .dt{color:var(--leaf-deep)}
+  .dayblock .dl{display:flex;justify-content:space-between;font-size:13px;color:var(--soft);padding:3px 0}
+  .dayblock .dl span:last-child{font-weight:700;color:var(--ink)}
+  .dayblock .dl.zero span:last-child{color:#C9BEB4;font-weight:400}
+  .dayblock .dsum{display:flex;justify-content:space-between;font-size:14px;font-weight:800;color:var(--leaf-deep);border-top:1px dashed var(--line);margin-top:6px;padding-top:6px}
+  /* celebration */
+  .celebrate{position:fixed;inset:0;background:rgba(74,66,62,.5);display:none;place-items:center;z-index:60;padding:24px}
+  .celebrate.show{display:grid;animation:fade .3s}
+  .celebrate .box{background:var(--paper);border-radius:24px;padding:34px 26px;text-align:center;max-width:340px;box-shadow:0 20px 50px rgba(0,0,0,.2);animation:pop .4s ease}
+  @keyframes pop{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+  .celebrate .em{font-size:52px}
+  .celebrate h2{font-size:22px;margin:10px 0 6px;color:var(--leaf-deep)}
+  .celebrate p{font-size:14px;color:var(--soft);line-height:1.6}
+  .celebrate .btn{margin-top:20px}
+  .hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="sun"></div>
+    <h1>Fit 21 線上馬拉松</h1>
+    <p class="tag">每 10 天一圈・一起跑下去</p>
+    <div class="daycount" id="daycount">第 1 圈・第 1 天</div>
+  </header>
+
+  <section id="onboard">
+    <div class="card">
+      <h2>先幫自己取個暱稱</h2>
+      <p class="hint">不用真名、不用電話。這裡沒有人認得你,你可以放心。</p>
+      <label>你的暱稱</label>
+      <input id="nick" placeholder="例如:海邊的風、努力中、小綠芽" maxlength="12">
+      <label>挑選一個代表你的顏色</label>
+      <div class="row" id="colorpick"></div>
+      <div class="row" style="margin-top:4px">
+        <div><label>起始體重 (kg)</label><input id="startW" type="number" inputmode="decimal" placeholder="選填"></div>
+        <div><label>起始體脂 (%)</label><input id="startF" type="number" inputmode="decimal" placeholder="選填"></div>
+      </div>
+      <div class="privacy">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9B8E88" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        <span>你的體重與體脂只有你自己看得到。在這裡我們不比身材,只一起累積努力、互相打氣。</span>
+      </div>
+      <button class="btn" onclick="startChallenge()">開始我的第一圈</button>
+    </div>
+  </section>
+
+  <section id="app" class="hidden">
+    <div class="tabs">
+      <button class="active" data-tab="checkin">今日打卡</button>
+      <button data-tab="progress">我的軌跡</button>
+      <button data-tab="board">夥伴牆</button>
+      <button data-tab="rules">計分說明</button>
+    </div>
+
+    <div class="view active" id="v-checkin">
+      <p class="greet">嗨,<span id="hiName">朋友</span> 🌿</p>
+      <p class="subtle">今天也好好照顧自己,完成打卡就一起往前一步。</p>
+      <div id="checkinForm">
+        <div class="checkitem">
+          <div class="top"><div class="ic w">⚖️</div><div><div class="title">今天的體重・體脂</div><div class="desc">早上量最準,只有你看得到</div></div></div>
+          <div class="row"><div><input id="todayW" type="number" inputmode="decimal" placeholder="體重 kg"></div><div><input id="todayF" type="number" inputmode="decimal" placeholder="體脂 %"></div></div>
+        </div>
+        <div class="checkitem">
+          <div class="top"><div class="ic s">💧</div><div><div class="title">今天喝了多少水</div><div class="desc">一杯 500cc,喝到 2500cc 以上就達標</div></div></div>
+          <div class="watertotal">今日 <b id="wTotal">0</b> cc <span id="wGoal" style="font-size:12px;color:#9B8E88;font-weight:600"></span></div>
+          <div class="cupgrid" id="cupgrid"></div>
+        </div>
+        <div class="checkitem">
+          <div class="top"><div class="ic h">🍽️</div><div><div class="title">今天有沒有「偷吃」?</div><div class="desc">誠實面對自己,才是真的進步</div></div></div>
+          <div class="honestrow"><button class="yes" id="honYes" onclick="setHonest(true)">✓ 我有守住</button><button class="no" id="honNo" onclick="setHonest(false)">誠實說・破戒了</button></div>
+        </div>
+        <div class="checkitem">
+          <div class="top"><div class="ic s">🥤</div><div><div class="title">今天喝了幾次奶昔</div><div class="desc">1 次 10 分,2 次以上 20 分</div></div></div>
+          <div class="counter">
+            <button onclick="stepShake(-1)">−</button>
+            <div><span class="cnum" id="shakeN">0</span> <span class="cunit">次</span></div>
+            <button onclick="stepShake(1)">＋</button>
+          </div>
+          <div class="goaltick" id="shakeTick"></div>
+        </div>
+        <div class="checkitem">
+          <div class="top"><div class="ic w">💊</div><div><div class="title">今天完成幾次錠片</div><div class="desc">一次 5 分,三次滿分 15 分</div></div></div>
+          <div class="tabletsrow" id="tabletsRow">
+            <button data-n="1">1 次</button>
+            <button data-n="2">2 次</button>
+            <button data-n="3">3 次</button>
+          </div>
+          <div class="goaltick" id="tabletTick"></div>
+        </div>
+        <div class="checkitem">
+          <div class="top"><div class="ic h">🥗</div><div><div class="title">今天有沒有做到飲食順序</div><div class="desc">先菜、再肉、最後飯,做到 20 分</div></div></div>
+          <div class="orderrow" id="orderRow">
+            <button data-o="1">菜 → 肉 → 飯</button>
+            <button data-o="1">肉 → 菜 → 飯</button>
+            <button data-o="0">今天沒有特別注意順序</button>
+          </div>
+        </div>
+        <button class="btn" onclick="submitCheckin()">完成今天打卡</button>
+        <p class="save-note">大家的努力會匯進「夥伴牆」這一頁,一步一步共同前進。</p>
+      </div>
+      <div id="doneBadge" class="done-badge hidden"><div class="big">🌻</div><p id="doneMsg">今天完成了!</p></div>
+    </div>
+
+    <div class="view" id="v-progress">
+      <div class="statgrid">
+        <div class="stat"><div class="n" id="sDays">0</div><div class="l">總打卡天數</div></div>
+        <div class="stat"><div class="n" id="sPts">0</div><div class="l">本圈積分</div></div>
+        <div class="stat"><div class="n" id="sDrop">0</div><div class="l">體重變化 kg</div></div>
+      </div>
+      <div class="chartcard"><h3>每日得分明細(本圈)</h3><div id="detailBox"><div class="empty">打卡後,這裡會列出每一項拿幾分。</div></div></div>
+      <div class="chartcard"><h3>體重軌跡(僅你可見,不歸零)</h3><div id="wChartBox"><div class="empty">開始打卡後,這裡會畫出你的曲線。</div></div></div>
+      <div class="chartcard"><h3>體脂軌跡(僅你可見,不歸零)</h3><div id="fChartBox"><div class="empty">還沒有資料。</div></div></div>
+    </div>
+
+    <div class="view" id="v-board">
+      <div class="quote" id="dailyQuote">🌱 每一次小小的堅持,都算數。</div>
+
+      <div class="together">
+        <h3 id="togetherHead">我們一起跑到這裡</h3>
+        <p class="sub">不是誰贏誰輸,是大家合力往前</p>
+        <div class="scene" id="scene"></div>
+        <div class="bigtotal"><span id="teamCheckins">0</span> <small>位夥伴・本圈一起跑</small></div>
+        <div class="teamrow">
+          <div class="teamstat"><div class="tn" id="teamWater">0</div><div class="tl">今日全隊喝水 (cc)</div></div>
+          <div class="teamstat"><div class="tn leafc" id="teamPeople">0</div><div class="tl">本圈參加的夥伴</div></div>
+        </div>
+        <div class="progwrap">
+          <div class="progbar"><div class="progfill" id="progFill" style="width:0%"></div></div>
+          <div class="proglabel" id="progLabel">今天還沒有人打卡,等你來開場 🌸</div>
+        </div>
+      </div>
+
+      <div class="sectitle">🏡 今天已經到齊的夥伴</div>
+      <div class="wall" id="wall"></div>
+      <p class="save-note" style="text-align:left;margin-top:8px">點夥伴旁邊的 💛 送一句匿名打氣,對方會收到、但不知道是誰。</p>
+
+      <div class="myinbox" id="myInbox">
+        <div class="n" id="inboxN">0</div>
+        <p>今天收到的打氣</p>
+        <div class="lines" id="inboxLines"></div>
+      </div>
+
+      <div class="sectitle">本圈積分(每 10 天歸零)</div>
+      <div class="softrank" id="roundRank"></div>
+
+      <div class="sectitle">今天默默努力的人</div>
+      <div class="softrank" id="softRank"></div>
+    </div>
+
+    <div class="view" id="v-rules">
+      <p class="ruleintro">每天完成打卡就有分數,<br>七個項目做得越多,分數越高。</p>
+      <span class="maxpill">一天最高 100 分 🌟</span>
+
+      <div class="rulecard"><div class="ri" style="background:rgba(143,185,138,.16)">📝</div><div class="rc-body"><div class="rc-t"><span>完成打卡</span><span class="rc-pts">10 分</span></div><div class="rc-d">只要今天有記錄,就給 10 分。有出現、有面對,就值得肯定。</div></div></div>
+
+      <div class="rulecard"><div class="ri" style="background:rgba(143,185,138,.16)">⚖️</div><div class="rc-body"><div class="rc-t"><span>體重／體脂達標</span><span class="rc-pts">10 分</span></div><div class="rc-d">體重比上次輕 0.2 公斤以上,或體脂比上次低(有掉就算)。兩個符合任一個就達標——體重卡住但體脂有降,一樣拿分。</div></div></div>
+
+      <div class="rulecard"><div class="ri" style="background:rgba(159,203,221,.22)">💧</div><div class="rc-body"><div class="rc-t"><span>喝水達標</span><span class="rc-pts">10 分</span></div><div class="rc-d">今天喝到 2500cc 以上就達標。杯子一杯 500cc,喝滿 5 杯即可。</div></div></div>
+
+      <div class="rulecard"><div class="ri" style="background:rgba(242,206,134,.25)">🥤</div><div class="rc-body"><div class="rc-t"><span>奶昔</span><span class="rc-pts">最高 20 分</span></div><div class="rc-d">喝 1 次 10 分,喝 2 次以上 20 分(封頂)。</div></div></div>
+
+      <div class="rulecard"><div class="ri" style="background:rgba(159,203,221,.22)">💊</div><div class="rc-body"><div class="rc-t"><span>錠片</span><span class="rc-pts">最高 15 分</span></div><div class="rc-d">每完成一次 5 分,一天三次全做到就是滿分 15 分。</div></div></div>
+
+      <div class="rulecard"><div class="ri" style="background:rgba(232,168,182,.22)">🥗</div><div class="rc-body"><div class="rc-t"><span>飲食順序</span><span class="rc-pts">20 分</span></div><div class="rc-d">有做到「先菜、再肉、最後飯」或「先肉、再菜、最後飯」就 20 分。順序對了,血糖比較穩。</div></div></div>
+
+      <div class="rulecard"><div class="ri" style="background:rgba(232,168,182,.22)">🍽️</div><div class="rc-body"><div class="rc-t"><span>誠實守住</span><span class="rc-pts">15 分</span></div><div class="rc-d">今天沒偷吃 15 分。就算破戒,只要誠實承認也給 5 分——不放棄比完美更重要。</div></div></div>
+
+      <div class="rulenote">
+        <b>關於「圈」:</b>這是一場馬拉松,每月 <b>1 號、11 號、21 號</b>各開一圈,每圈 <b>10 天</b>。跑完一圈,積分會<b>歸零</b>、全隊重新出發,前面落後的人也有新的機會。中途加入的人,自動歸到<b>目前這一圈</b>。<br><br>
+        你的<b>體重體脂軌跡不會歸零</b>,會一直陪著你,看得到自己一路的進步。
+      </div>
+    </div>
+  </section>
+
+  <footer>Fit 21 線上馬拉松・遇見喜樂營養俱樂部<br>每 10 天一圈,一圈一圈變更好</footer>
+</div>
+<div class="toast" id="toast"></div>
+<div class="celebrate" id="celebrate"><div class="box">
+  <div class="em">🎉</div>
+  <h2 id="celeTitle">第 1 圈完成!</h2>
+  <p id="celeMsg">你跑完了一整圈,好好為自己鼓掌 👏<br>下一圈分數歸零,大家重新出發,你的體重軌跡會一直陪著你。</p>
+  <button class="btn" onclick="closeCelebrate()">開始下一圈 🌿</button>
+</div></div>
+
+<script>
+const LOCAL='fit21_local';
+let me=null, shared={}, sharedOK=false;
+function loadLocal(){try{const r=localStorage.getItem(LOCAL);if(r)me=JSON.parse(r)}catch(e){}}
+function saveLocal(){try{localStorage.setItem(LOCAL,JSON.stringify(me))}catch(e){}}
+async function loadShared(){
+  if(!fbDB){ // 離線後備:讀本機(仍可單機測試)
+    try{const r=localStorage.getItem('fit21_board');shared=r?JSON.parse(r):{};sharedOK=false}catch(e){shared={};sharedOK=false}
+    return;
+  }
+  try{
+    const snap=await fbDB.ref('board').get();
+    shared=snap.exists()?snap.val():{};
+    sharedOK=true;
+  }catch(e){shared={};sharedOK=false}
+}
+async function saveShared(){
+  if(fbDB){
+    try{await fbDB.ref('board').set(shared)}catch(e){console.warn('save failed',e)}
+  }else{
+    try{localStorage.setItem('fit21_board',JSON.stringify(shared))}catch(e){}
+  }
+}
+// 只寫入單一使用者的節點,避免蓋掉別人的資料(30人同時打卡也安全)
+async function saveUser(uid){
+  if(fbDB){
+    try{await fbDB.ref('board/'+uid).set(shared[uid])}catch(e){console.warn('saveUser failed',e)}
+  }else{
+    try{localStorage.setItem('fit21_board',JSON.stringify(shared))}catch(e){}
+  }
+}
+// 即時同步:任何人打卡/加油,大家的畫面自動更新
+function watchShared(){
+  if(!fbDB)return;
+  fbDB.ref('board').on('value',snap=>{
+    shared=snap.exists()?snap.val():{};
+    if(me&&document.getElementById('app') && !document.getElementById('app').classList.contains('hidden')){
+      const active=document.querySelector('.tabs button.active');
+      if(active&&active.dataset.tab==='board')buildBoard();
+    }
+  });
+}
+
+const COLORS=[{n:'嫩綠',c:'#8FB98A'},{n:'蜜桃',c:'#E3A183'},{n:'水藍',c:'#9FCBDD'},{n:'暖黃',c:'#F2CE86'},{n:'粉玫',c:'#E8A8B6'}];
+let pickedColor=COLORS[0].c, waterCups=0, honest=null;
+let shakeN=0, tabletN=0, mealOrder=null;
+const CUP_CC=500, CUP_N=12;
+const CHEERS=['你很棒,一起加油 💛','今天也有你真好 🌿','慢慢來,我們陪你 🌸','別放棄,你做得到 🌟','看見你了,繼續前進 ☀️','有你在,大家更有力量 🍀'];
+const QUOTES=['🌱 每一次小小的堅持,都算數。','☀️ 今天的你,比昨天更靠近目標一點。','🌿 不用完美,只要沒有停下來。','💧 多喝一杯水,就是對自己好一點。','🌸 我們不趕路,我們一起走。','🍀 誠實面對自己,就是最大的勇敢。'];
+
+const cp=document.getElementById('colorpick');
+COLORS.forEach((o,i)=>{const b=document.createElement('button');b.type='button';b.style.cssText=`flex:1;height:44px;border-radius:12px;border:3px solid ${i===0?'#4A423E':'transparent'};background:${o.c};cursor:pointer`;b.title=o.n;b.onclick=()=>{pickedColor=o.c;[...cp.children].forEach(x=>x.style.borderColor='transparent');b.style.borderColor='#4A423E'};cp.appendChild(b)});
+
+const cg=document.getElementById('cupgrid');
+for(let i=0;i<CUP_N;i++){const w=document.createElement('div');w.className='cupwrap';w.innerHTML=`<div class="cup"></div><div class="cuplabel">${(i+1)*CUP_CC}</div>`;w.onclick=()=>{waterCups=(i<waterCups)?i:i+1;paintCups()};cg.appendChild(w)}
+function paintCups(){[...cg.children].forEach((w,i)=>{const on=i<waterCups;w.classList.toggle('full',on);w.querySelector('.cup').classList.toggle('full',on)});const cc=waterCups*CUP_CC;document.getElementById('wTotal').textContent=cc;const g=document.getElementById('wGoal');if(cc>=2500){g.textContent='・已達標 🌿';g.style.color='#6E9E6A'}else{g.textContent='・還差 '+(2500-cc)+' cc';g.style.color='#9B8E88'}}
+function setHonest(v){honest=v;document.getElementById('honYes').classList.toggle('sel',v===true);document.getElementById('honNo').classList.toggle('sel',v===false)}
+
+function stepShake(d){shakeN=Math.max(0,Math.min(9,shakeN+d));document.getElementById('shakeN').textContent=shakeN;const t=document.getElementById('shakeTick');const p=shakeN>=2?20:shakeN===1?10:0;t.textContent=p?('+'+p+' 分 🥤'):'';t.style.color='#6E9E6A'}
+
+const tabletsRow=document.getElementById('tabletsRow');
+tabletsRow.querySelectorAll('button').forEach(b=>{b.onclick=()=>{const n=+b.dataset.n;tabletN=(tabletN===n)?0:n;[...tabletsRow.children].forEach(x=>x.classList.toggle('sel',+x.dataset.n<=tabletN&&tabletN>0));const t=document.getElementById('tabletTick');t.textContent=tabletN?('+'+tabletN*5+' 分 💊'):'';t.style.color='#6E9E6A'}});
+
+const orderRow=document.getElementById('orderRow');
+orderRow.querySelectorAll('button').forEach(b=>{b.onclick=()=>{mealOrder=+b.dataset.o;[...orderRow.children].forEach(x=>{x.classList.remove('sel');x.querySelector('.ok')&&x.querySelector('.ok').remove()});b.classList.add('sel');if(mealOrder===1){const s=document.createElement('span');s.className='ok';s.textContent='+20 分 ✓';b.appendChild(s)}}});
+
+function todayKey(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
+const ROUND_LEN=10;
+// 圈以「日曆日期」計算:每月 1、11、21 號各開一圈,每圈固定 10 天。
+// 2026 年 9 月 1 日 = 第 1 圈。全隊統一,不看個人加入日。
+function roundThird(day){ return day>=21?2 : day>=11?1 : 0; }        // 一個月的第幾個 10 天段(0/1/2)
+function absRoundIndex(y,m,day){ return (y*12+(m-1))*3 + roundThird(day); } // 從西元 0 年起的絕對圈序
+const BASE_ROUND = absRoundIndex(2026,9,1);   // 基準:2026/9/1
+function roundNo(){ const d=new Date(); const n=absRoundIndex(d.getFullYear(),d.getMonth()+1,d.getDate())-BASE_ROUND+1; return n<1?1:n; }
+function dayInRound(){ const day=new Date().getDate(); const start=day>=21?21:day>=11?11:1; return day-start+1; }
+function roundKey(){ return 'r'+roundNo(); }
+function dayNumber(){ // 保留給「我的軌跡」用:個人總打卡天數不受圈影響
+  if(!me)return 1;const s=new Date(me.startDate),n=new Date(todayKey());return Math.floor((n-s)/86400000)+1;
+}
+
+async function startChallenge(){
+  const nick=document.getElementById('nick').value.trim();
+  if(!nick){alert('先取一個暱稱吧 🙂');return}
+  const id='u_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+  me={id,nick,color:pickedColor,startW:parseFloat(document.getElementById('startW').value)||null,startF:parseFloat(document.getElementById('startF').value)||null,startDate:todayKey(),logs:{}};
+  saveLocal();
+  shared[id]={nick,color:pickedColor,rounds:{},daily:{},water:{},cheersIn:{}};
+  await saveUser(id);enterApp();
+}
+function enterApp(){document.getElementById('onboard').classList.add('hidden');document.getElementById('app').classList.remove('hidden');render()}
+
+async function submitCheckin(){
+  const w=parseFloat(document.getElementById('todayW').value)||null;
+  const f=parseFloat(document.getElementById('todayF').value)||null;
+  if(honest===null){alert('別忘了誠實面對今天有沒有守住喔 🍃');return}
+  const cc=waterCups*CUP_CC;
+  let pts=10;                       // 打卡基本分
+  if(cc>=2500)pts+=10;              // 喝水達標 2500cc +10
+
+  // 體重/體脂達標:比對上一次有紀錄的一天
+  const prevLogs=Object.values(me.logs).sort((a,b)=>a.day-b.day);
+  const lastW=[...prevLogs].reverse().find(l=>l.w!=null);
+  const lastF=[...prevLogs].reverse().find(l=>l.f!=null);
+  let bodyGoal=false;
+  if(w!=null&&lastW&&(lastW.w-w)>=0.2)bodyGoal=true;   // 體重比上次輕 0.2kg 以上
+  if(f!=null&&lastF&&(lastF.f-f)>0)bodyGoal=true;      // 體脂只要比上次低
+  if(bodyGoal)pts+=10;             // 體重/體脂達標 +10
+
+  const shakePts=shakeN>=2?20:shakeN===1?10:0;   // 奶昔 1次10、2次以上20封頂
+  pts+=shakePts;
+  pts+=tabletN*5;                  // 錠片 每次 5 分,最多 3 次=15
+  if(mealOrder===1)pts+=20;        // 飲食順序達標 +20
+
+  pts+=honest?15:5;                 // 誠實守住 +15 / 誠實承認 +5
+
+  const tk=todayKey(), rk=roundKey();
+  const breakdown={base:10,body:bodyGoal?10:0,water:cc>=2500?10:0,shake:shakePts,tablet:tabletN*5,order:mealOrder===1?20:0,honest:honest?15:5};
+  const already=me.logs[tk];
+  me.logs[tk]={w,f,cups:waterCups,cc,honest,pts,bodyGoal,shake:shakeN,tablet:tabletN,order:mealOrder===1,breakdown,day:dayNumber(),round:roundNo(),dir:dayInRound()};saveLocal();
+
+  if(!shared[me.id])shared[me.id]={nick:me.nick,color:me.color,rounds:{},daily:{},water:{},cheersIn:{}};
+  const s=shared[me.id];
+  if(!s.rounds)s.rounds={};
+  // 若今天已打過卡,先扣掉舊分再加新分(避免重複累加)
+  if(already){s.rounds[rk]=(s.rounds[rk]||0)-already.pts;s.water[tk]=(s.water[tk]||0)-already.cc}
+  s.rounds[rk]=(s.rounds[rk]||0)+pts;
+  s.daily[tk]=pts;                  // 當天總分(覆蓋,不累加)
+  s.water[tk]=(s.water[tk]||0)+cc;
+  s.nick=me.nick;s.color=me.color;
+  await saveUser(me.id);
+  document.getElementById('checkinForm').classList.add('hidden');
+  let msg=honest?'今天守住了,你替全隊往前推了一步 🌻':'誠實面對就是勇敢,明天我們再一起站起來 🌱';
+  if(bodyGoal)msg='數字有進步,今天的努力看得見 🌟 '+(honest?'而且守住了,太棒了!':'明天我們再一起加油!');
+  document.getElementById('doneMsg').textContent=msg+' 今天 +'+pts+' 分';
+  document.getElementById('doneBadge').classList.remove('hidden');render();
+  // 若今天是本圈最後一天(明天進入新圈),跳完成慶祝
+  const _t=new Date(); const _tm=new Date(_t.getFullYear(),_t.getMonth(),_t.getDate()+1);
+  if(absRoundIndex(_tm.getFullYear(),_tm.getMonth()+1,_tm.getDate())!==absRoundIndex(_t.getFullYear(),_t.getMonth()+1,_t.getDate())){
+    setTimeout(()=>showCelebrate(roundNo()),700);
+  }
+}
+
+async function render(){
+  if(!me)return;await loadShared();
+  document.getElementById('hiName').textContent=me.nick;
+  document.getElementById('daycount').textContent='第 '+roundNo()+' 圈・第 '+dayInRound()+' 天';
+  const logs=Object.values(me.logs).sort((a,b)=>a.day-b.day);
+  document.getElementById('sDays').textContent=logs.length;
+  const myRoundPts=(shared[me.id]&&shared[me.id].rounds&&shared[me.id].rounds[roundKey()])||0;
+  document.getElementById('sPts').textContent=myRoundPts;
+  const ws=logs.filter(l=>l.w!=null).map(l=>l.w);let drop=0;
+  if(me.startW&&ws.length)drop=+(me.startW-ws[ws.length-1]).toFixed(1);
+  else if(ws.length>1)drop=+(ws[0]-ws[ws.length-1]).toFixed(1);
+  document.getElementById('sDrop').textContent=drop>0?'-'+drop:drop;
+  drawChart('wChartBox',logs.filter(l=>l.w!=null),'w','#8FB98A');
+  drawChart('fChartBox',logs.filter(l=>l.f!=null),'f','#E3A183');
+  buildDetail(logs);
+  buildBoard();
+  if(me.logs[todayKey()]){document.getElementById('checkinForm').classList.add('hidden');document.getElementById('doneBadge').classList.remove('hidden')}
+}
+
+function drawChart(boxId,logs,key,color){
+  const box=document.getElementById(boxId);
+  if(logs.length<1){box.innerHTML='<div class="empty">還沒有資料。</div>';return}
+  const vals=logs.map(l=>l[key]),min=Math.min(...vals),max=Math.max(...vals),pad=(max-min)*.2||1;
+  const lo=min-pad,hi=max+pad,W=460,H=150,m=24;
+  const x=i=>logs.length<2?W/2:m+i*(W-2*m)/(logs.length-1);
+  const y=v=>H-m-((v-lo)/(hi-lo))*(H-2*m);
+  let d='',dots='';
+  logs.forEach((l,i)=>{d+=(i?'L':'M')+x(i).toFixed(1)+' '+y(l[key]).toFixed(1)+' ';dots+=`<circle cx="${x(i).toFixed(1)}" cy="${y(l[key]).toFixed(1)}" r="4" fill="${color}"/>`});
+  box.innerHTML=`<svg class="chart" viewBox="0 0 ${W} ${H}"><path d="${d}" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>${dots}<text x="${m}" y="${y(vals[0])-10}" font-size="12" fill="#9B8E88">${vals[0]}</text><text x="${W-m}" y="${y(vals[vals.length-1])-10}" font-size="12" fill="${color}" text-anchor="end" font-weight="700">${vals[vals.length-1]}</text></svg>`;
+}
+
+const ITEM_LABELS=[['base','完成打卡'],['body','體重/體脂達標'],['water','喝水達標'],['shake','奶昔'],['tablet','錠片'],['order','飲食順序'],['honest','誠實']];
+function buildDetail(logs){
+  const box=document.getElementById('detailBox');
+  const cur=logs.filter(l=>l.round===roundNo()&&l.breakdown).sort((a,b)=>b.day-a.day);
+  if(!cur.length){box.innerHTML='<div class="empty">本圈還沒有打卡紀錄。</div>';return}
+  box.innerHTML='';
+  cur.forEach(l=>{
+    const bl=document.createElement('div');bl.className='dayblock';
+    let rows='';
+    ITEM_LABELS.forEach(([k,name])=>{const v=l.breakdown[k]||0;rows+=`<div class="dl${v?'':' zero'}"><span>${name}</span><span>${v?('+'+v):'0'}</span></div>`});
+    bl.innerHTML=`<div class="dh"><span>第 ${l.dir||1} 天</span><span class="dt">共 ${l.pts} 分</span></div>${rows}<div class="dsum"><span>合計</span><span>${l.pts} 分</span></div>`;
+    box.appendChild(bl);
+  });
+}
+
+function showCelebrate(r){
+  document.getElementById('celeTitle').textContent='第 '+r+' 圈完成!';
+  document.getElementById('celebrate').classList.add('show');
+}
+function closeCelebrate(){document.getElementById('celebrate').classList.remove('show')}
+function boardData(){
+  const real=Object.entries(shared).map(([id,s])=>({id,...s}));let arr=[...real];
+  if(real.length<4){const tk=todayKey(),rk=roundKey();DEMO.forEach((c,i)=>{arr.push({id:c.id,nick:c.nick,color:c.color,rounds:{[rk]:22+(6-i)*11},daily:{[tk]:22+(6-i)*3},water:{[tk]:(4+(6-i))*500},cheersIn:{},demo:true})})}
+  return arr;
+}
+
+function buildBoard(){
+  const arr=boardData(),tk=todayKey(),rk=roundKey();
+  // rotating quote
+  document.getElementById('dailyQuote').textContent=QUOTES[dayNumber()%QUOTES.length];
+
+  // 本圈成員:這一圈有打過卡的人(退出的自動不算、新人打卡就算)
+  const roundMembers=arr.filter(p=>p.rounds&&p.rounds[rk]>0);
+  const checkedToday=arr.filter(p=>p.daily&&p.daily[tk]);
+  // 本圈全隊打卡次數與喝水(只算本圈)
+  const teamCheckins=roundMembers.length;
+  const teamWater=checkedToday.reduce((s,p)=>s+((p.water&&p.water[tk])||0),0);
+  document.getElementById('teamCheckins').textContent=teamCheckins;
+  document.getElementById('teamWater').textContent=teamWater.toLocaleString();
+  document.getElementById('teamPeople').textContent=roundMembers.length;
+  const th=document.getElementById('togetherHead');if(th)th.textContent='第 '+roundNo()+' 圈・我們一起跑到這裡';
+
+  // today progress: how many of this round's members checked in today
+  const base=roundMembers.length||1;
+  const pct=Math.round(checkedToday.length/base*100);
+  document.getElementById('progFill').style.width=Math.min(pct,100)+'%';
+  document.getElementById('progLabel').textContent=checkedToday.length
+    ? `今天已有 ${checkedToday.length} 位夥伴完成打卡,一起加油 🌿`
+    : '今天還沒有人打卡,等你來開場 🌸';
+  drawScene(document.getElementById('scene'),pct);
+
+  // wall of who checked in today
+  const wall=document.getElementById('wall');wall.innerHTML='';
+  if(!checkedToday.length){wall.innerHTML='<div class="save-note">還沒有人打卡,你會是今天第一個 🌟</div>';}
+  checkedToday.forEach(p=>{
+    const isMe=me&&p.id===me.id;
+    const chip=document.createElement('div');chip.className='chip'+(isMe?' me':'');
+    chip.innerHTML=`<div class="dot" style="background:${p.color}">${p.nick.slice(0,1)}</div>${p.nick}${isMe?'(我)':''}`;
+    if(!isMe){
+      const btn=document.createElement('button');btn.className='cheerbtn';btn.textContent='💛';
+      const already=me&&shared[me.id]&&shared[me.id].sent&&shared[me.id].sent[tk+'_'+p.id];
+      if(already)btn.classList.add('done');
+      btn.onclick=()=>sendCheer(p.id,btn);
+      chip.appendChild(btn);
+    }
+    wall.appendChild(chip);
+  });
+
+  // my inbox
+  const myS=shared[me.id];
+  const inbox=(myS&&myS.cheersIn&&myS.cheersIn[tk])||[];
+  document.getElementById('inboxN').textContent=inbox.length;
+  const lines=document.getElementById('inboxLines');lines.innerHTML='';
+  inbox.slice(-4).forEach(t=>{const d=document.createElement('div');d.textContent=t;lines.appendChild(d)});
+  document.getElementById('myInbox').style.display=inbox.length?'block':'none';
+
+  // 本圈積分排行
+  const roundStand=arr.map(p=>({...p,v:(p.rounds&&p.rounds[rk])||0})).filter(p=>p.v>0).sort((a,b)=>b.v-a.v).slice(0,8);
+  const rr=document.getElementById('roundRank');rr.innerHTML='';
+  if(!roundStand.length){rr.innerHTML='<div class="save-note">本圈還沒有人得分,你來開跑 🌱</div>';}
+  roundStand.forEach(p=>{const isMe=me&&p.id===me.id;const r=document.createElement('div');r.className='lbrow'+(isMe?' me':'');r.innerHTML=`<div class="ava" style="background:${p.color}">${p.nick.slice(0,1)}</div><div class="lbname">${p.nick}${isMe?'(我)':''}</div><div class="lbpts">${p.v}<small> 分</small></div>`;rr.appendChild(r)});
+
+  // softened rank — today's effort only, gentle
+  const todayEffort=arr.filter(p=>p.daily&&p.daily[tk]).map(p=>({...p,v:p.daily[tk]})).sort((a,b)=>b.v-a.v).slice(0,5);
+  const sr=document.getElementById('softRank');sr.innerHTML='';
+  if(!todayEffort.length){sr.innerHTML='<div class="save-note">今天的故事還沒開始 🌱</div>';}
+  todayEffort.forEach(p=>{const isMe=me&&p.id===me.id;const r=document.createElement('div');r.className='lbrow'+(isMe?' me':'');r.innerHTML=`<div class="ava" style="background:${p.color}">${p.nick.slice(0,1)}</div><div class="lbname">${p.nick}${isMe?'(我)':''}</div><div class="lbpts">${p.v}<small> 今日努力</small></div>`;sr.appendChild(r)});
+}
+
+async function sendCheer(targetId,btn){
+  const tk=todayKey();
+  if(!shared[me.id].sent)shared[me.id].sent={};
+  if(shared[me.id].sent[tk+'_'+targetId]){showToast('今天已經替他加油過囉 💛');return}
+  const msg=CHEERS[Math.floor(Math.random()*CHEERS.length)];
+  if(shared[targetId]){
+    if(!shared[targetId].cheersIn)shared[targetId].cheersIn={};
+    if(!shared[targetId].cheersIn[tk])shared[targetId].cheersIn[tk]=[];
+    shared[targetId].cheersIn[tk].push(msg);
+  }
+  shared[me.id].sent[tk+'_'+targetId]=1;
+  btn.classList.add('done');
+  await saveUser(targetId);
+  await saveUser(me.id);
+  showToast('已送出一句打氣 💛');
+}
+let toastT;
+function showToast(t){const el=document.getElementById('toast');el.textContent=t;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),1800)}
+
+function drawScene(box,pct){
+  // a little garden that grows with team progress
+  const n=Math.max(1,Math.round(pct/12)); // number of sprouts
+  let flowers='';
+  const cols=['#8FB98A','#E8A8B6','#F2CE86','#9FCBDD','#E3A183'];
+  for(let i=0;i<n&&i<9;i++){
+    const cx=40+i*52+(i%2?6:0), base=110, h=34+(i%3)*10;
+    const c=cols[i%cols.length];
+    flowers+=`<line x1="${cx}" y1="${base}" x2="${cx}" y2="${base-h}" stroke="#8FB98A" stroke-width="3"/>
+      <circle cx="${cx}" cy="${base-h}" r="9" fill="${c}"/>
+      <circle cx="${cx}" cy="${base-h}" r="3.5" fill="#FFFAF7"/>`;
+  }
+  box.innerHTML=`<svg viewBox="0 0 520 120" width="100%" height="120" preserveAspectRatio="xMidYMax meet">
+    <ellipse cx="260" cy="116" rx="260" ry="10" fill="rgba(143,185,138,.15)"/>
+    ${flowers}
+  </svg>`;
+}
+
+document.querySelectorAll('.tabs button').forEach(b=>{b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById('v-'+b.dataset.tab).classList.add('active');if(b.dataset.tab==='board')render()}});
+
+(async function(){loadLocal();await loadShared();watchShared();if(me){enterApp()}})();
+</script>
+</body>
+</html>
